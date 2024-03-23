@@ -29,7 +29,8 @@ print(getwd())
 
 dat <- fread("../3_output_data/main_model_data.csv")
 
-# Correct class -----------------------------------------------------------------
+# Correct class ----------------------------------------------------------------
+
 dat$zip <- dat$zip %>% as.factor
 dat$ZipYr <- dat$ZipYr %>% as.factor
 dat$CoYr <- dat$CoYr%>% as.factor
@@ -38,6 +39,7 @@ dat$demshare_tercile <- dat$demshare_tercile %>% as.character
 # Permit correlations ----------------------------------------------------------
 
 ## OLS ----
+
 dat[is.na(permitPresentVal),"permitPresentVal"] <- 0
 dat[is.na(permitPresentVal),"permitPresentVal"] <- 0
 dat[is.na(newRoof),"newRoof"] <- 0
@@ -66,7 +68,8 @@ feols(permitPresentVal ~
         missingBathroomVal + missingRoofVal + missingKitchenVal +
         missingRemodelVal + otherMissing |ZipYr, dat)
 
-dat$permitAdjPrice <- dat$SALE_AMOUNT - dat$hasSolar*dat$LIVING_SQUARE_FEET*1.658458 + 1574.241055
+dat$permitAdjPrice <- dat$SALE_AMOUNT - dat$hasSolar*dat$LIVING_SQUARE_FEET*
+  1.658458 + 1574.241055
   
 
 ## FE Regressions ----
@@ -115,6 +118,7 @@ rm(lmPermitVal,lmnewRoof,lmremodel,lmNewKitchen,lmNewBathroom,lmNpermits,
    fePermitVal,fenewRoof,feremodel,feNewKitchen,feNewBathroom,feNpermits)
 
 # MLS regressions --------------------------------------------------------------
+
 ## Load -----
 mls <- fread("../3_output_data/mls_solar.csv")
 
@@ -149,6 +153,8 @@ FEwellMaint <- feols(wellMaint~hasSolar| zip,mls)
 FEupdates <- feols(updates~hasSolar| zip,mls)
 
 ## Tables ----
+
+#FE
 modelsummary( list("roof"=FEnewRoof,
                    "electric"=FEnewElec,
                    "heatpump"=FEheatPump,
@@ -164,7 +170,7 @@ modelsummary( list("roof"=FEnewRoof,
               coef_map=c("hasSolar"="solar")
               )
 
-#Results table
+#OLS
 modelsummary( list("roof"=lmnewRoof,
                    "electric"=lmnewElec,
                    "heatpump"=lmheatPump,
@@ -185,107 +191,78 @@ modelsummary( list("roof"=lmnewRoof,
 # replication  -----------------------------------------------------------------
 
 ## Fixed effects ----
-lmRep1 <- feols(log(SALE_AMOUNT) ~ hasSolar:factor(TPO) |
+lmRep1 <- feols(log(SALE_AMOUNT) ~ hasSolar + hasSolar:TPO |
                  ZipYr + ID + FIPSMonth,
                dat)
 
-lmRep2 <- feols(log(SALE_AMOUNT) ~ hasSolar:factor(TPO)|
+lmRep2 <- feols(log(SALE_AMOUNT) ~ hasSolar + hasSolar:TPO|
                  ZipYr + ID + FIPSMonth+ CONDITION + permitPresentVal +
                   missingRoofVal + missingBathroomVal+ missingRemodelVal+
                   missingKitchenVal,
                dat)
 
-lmRep3 <- feols(log(SALE_AMOUNT) ~ 
-                  hasSolar:factor(TPO):(demshare_tercile)|
+lmRep3 <- feols(log(SALE_AMOUNT) ~ hasSolar + hasSolar:TPO + 
+                   hasSolar:as.factor(demshare_tercile) + 
+                  hasSolar:TPO:as.factor(demshare_tercile)|
                  ZipYr + ID + FIPSMonth + CONDITION + permitPresentVal +
                   missingRoofVal + missingBathroomVal+ missingRemodelVal+
                   missingKitchenVal,
                dat)
 
-## Coefficent differences
-
-linearHypothesis(lmRep3, "hasSolar:factor(TPO)0:demshare_tercile3 - 
-                 hasSolar:factor(TPO)0:demshare_tercile2 = 0") 
-linearHypothesis(lmRep3, "hasSolar:factor(TPO)0:demshare_tercile3 - 
-                 hasSolar:factor(TPO)0:demshare_tercile1 = 0")
-
-linearHypothesis(lmRep3, "hasSolar:factor(TPO)1:demshare_tercile3 - 
-                 hasSolar:factor(TPO)1:demshare_tercile2 = 0") 
-linearHypothesis(lmRep3, "hasSolar:factor(TPO)1:demshare_tercile3 - 
-                 hasSolar:factor(TPO)1:demshare_tercile1 = 0")
-
 lmRep4 <- feols(log(SALE_AMOUNT) ~ 
-                 hasSolar:factor(TPO):factor(inc_tercile)|
-                 ZipYr + ID + FIPSMonth+ CONDITION + permitPresentVal +
+                  hasSolar + hasSolar:TPO + 
+                  hasSolar:as.factor(inc_tercile) + 
+                  hasSolar:TPO:as.factor(inc_tercile) +
                   missingRoofVal + missingBathroomVal+ missingRemodelVal+
                   missingKitchenVal,
                dat)
-
-linearHypothesis(lmRep4, "hasSolar:factor(TPO)0:factor(inc_tercile)3 - 
-                 hasSolar:factor(TPO)0:factor(inc_tercile)2 = 0")
-linearHypothesis(lmRep4, "hasSolar:factor(TPO)0:factor(inc_tercile)3 - 
-                 hasSolar:factor(TPO)0:factor(inc_tercile)1 = 0")
-
-linearHypothesis(lmRep4, "hasSolar:factor(TPO)1:factor(inc_tercile)3 - 
-                 hasSolar:factor(TPO)1:factor(inc_tercile)2 = 0")
-linearHypothesis(lmRep4, "hasSolar:factor(TPO)1:factor(inc_tercile)3 - 
-                 hasSolar:factor(TPO)1:factor(inc_tercile)1 = 0")
 
 lmRep5 <- feols(log(SALE_AMOUNT) ~ 
-                 hasSolar:factor(TPO):factor(BA_tercile) |
+                  hasSolar + hasSolar:TPO + 
+                  hasSolar:as.factor(BA_tercile) + 
+                  hasSolar:TPO:as.factor(BA_tercile)|
                  ZipYr + ID + FIPSMonth+ CONDITION + permitPresentVal +
                   missingRoofVal + missingBathroomVal+ missingRemodelVal+
                   missingKitchenVal,
                dat)
-
-linearHypothesis(lmRep5, "hasSolar:factor(TPO)0:factor(BA_tercile)3 - 
-                 hasSolar:factor(TPO)0:factor(BA_tercile)2 = 0") 
-linearHypothesis(lmRep5, "hasSolar:factor(TPO)0:factor(BA_tercile)3 - 
-                 hasSolar:factor(TPO)0:factor(BA_tercile)1 = 0") 
-
-linearHypothesis(lmRep5, "hasSolar:factor(TPO)1:factor(BA_tercile)3 - 
-                 hasSolar:factor(TPO)1:factor(BA_tercile)2 = 0") 
-linearHypothesis(lmRep5, "hasSolar:factor(TPO)1:factor(BA_tercile)3 - 
-                 hasSolar:factor(TPO)1:factor(BA_tercile)1 = 0") 
 
 # replication comparison to mean
 #From model 1
-mean(log(dat$SALE_AMOUNT[dat$hasSolar==1])) %>% exp
-388181*coef(lmRep1)[1] #$30545 premium for home-owner owned
-388181*coef(lmRep1)[2] #16106 premium for TPO
+mean_solar_val <- mean(log(dat$SALE_AMOUNT[dat$hasSolar==1])) %>% exp
+
+mean_solar_val*coef(lmRep1)[1] #$27211 premium for home-owner owned
+mean_solar_val*(coef(lmRep1)[1]+ coef(lmRep1)[2]) #13333 premium for TPO
+
+mean_solar_val*(coef(lmRep2)[1]) #$33272 premium for home-owner owned
+mean_solar_val*(coef(lmRep2)[1]+coef(lmRep2)[2]) #5527 premium for TPO
+
 
 ## Table ----
 
 modelsummary( list("baseline"=lmRep1,
-                   "baseline +"=lmRep2,
-                   "income"=lmRep3,
-                   "D share"=lmRep4,
+                   "property improvements"=lmRep2,
+                   "income"=lmRep4,
+                   "D share"=lmRep3,
                    "college"=lmRep5), 
               output="../5_analysis/tab_logs.tex",
               title="Log-linear replication \\label{tab:log}",
               stars=T,
               escape = F,
               fmt = fmt_decimal(3, 3),
-              coef_map=c("hasSolar:factor(TPO)0"="solar",
-                         "hasSolar:factor(TPO)1"="TPO solar",
-                         "hasSolar:factor(TPO)0:factor(inc_tercile)1"="solar $\\times$ tercile 1",
-                         "hasSolar:factor(TPO)0:factor(inc_tercile)2"="solar $\\times$ tercile 2",
-                         "hasSolar:factor(TPO)0:factor(inc_tercile)3"="solar $\\times$ tercile 3",
-                         "hasSolar:factor(TPO)0:demshare_tercile1"="solar $\\times$ tercile 1",
-                         "hasSolar:factor(TPO)0:demshare_tercile2"="solar $\\times$ tercile 2",
-                         "hasSolar:factor(TPO)0:demshare_tercile3"="solar $\\times$ tercile 3",
-                         "hasSolar:factor(TPO)0:factor(BA_tercile)1"="solar $\\times$ tercile 1",
-                         "hasSolar:factor(TPO)0:factor(BA_tercile)2"="solar $\\times$ tercile 2",
-                         "hasSolar:factor(TPO)0:factor(BA_tercile)3"="solar $\\times$ tercile 3",
-                         "hasSolar:factor(TPO)1:factor(inc_tercile)1"="TPO solar $\\times$ tercile 1",
-                         "hasSolar:factor(TPO)1:factor(inc_tercile)2"="TPO solar $\\times$ tercile 2",
-                         "hasSolar:factor(TPO)1:factor(inc_tercile)3"="TPO solar $\\times$ tercile 3",
-                         "hasSolar:factor(TPO)1:demshare_tercile1"="TPO solar $\\times$ tercile 1",
-                         "hasSolar:factor(TPO)1:demshare_tercile2"="TPO solar $\\times$ tercile 2",
-                         "hasSolar:factor(TPO)1:demshare_tercile3"="TPO solar $\\times$ tercile 3",
-                         "hasSolar:factor(TPO)1:factor(BA_tercile)1"="TPO solar $\\times$ tercile 1",
-                         "hasSolar:factor(TPO)1:factor(BA_tercile)2"="TPO solar $\\times$ tercile 2",
-                         "hasSolar:factor(TPO)1:factor(BA_tercile)3"="TPO solar $\\times$ tercile 3"
+              coef_map=c("hasSolar"="PVBenefits",
+                         "hasSolar:TPO"="TPO $\\times$ solar",
+                         "hasSolar:as.factor(inc_tercile)2"="solar $\\times$ tercile 2",
+                         "hasSolar:as.factor(inc_tercile)3"="solar $\\times$ tercile 3",
+                         "hasSolar:demshare_tercile2"="solar $\\times$ tercile 2",
+                         "hasSolar:demshare_tercile3"="solar $\\times$ tercile 3",
+                         "hasSolar:as.factor(BA_tercile)2"="solar $\\times$ tercile 2",
+                         "hasSolar:as.factor(BA_tercile)3"="solar $\\times$ tercile 3",
+                         "hasSolar:TPO:as.factor(inc_tercile)2"="TPO $\\times$ solar $\\times$ tercile 2",
+                         "hasSolar:TPO:as.factor(inc_tercile)3"="TPO $\\times$ solar $\\times$ tercile 3",
+                         "hasSolar:TPO:demshare_tercile2"="TPO $\\times$ solar $\\times$ tercile 2",
+                         "hasSolar:TPO:demshare_tercile3"="TPO $\\times$ solar $\\times$ tercile 3",
+                         "hasSolar:TPO:as.factor(BA_tercile)2"="TPO $\\times$ solar $\\times$ tercile 2",
+                         "hasSolar:TPO:as.factor(BA_tercile)3"="TPO $\\times$ solar $\\times$ tercile 3"
               ),
               gof_map=tibble::tribble(
                 ~raw,        ~clean,          ~fmt,
@@ -300,27 +277,27 @@ modelsummary( list("baseline"=lmRep1,
                                   "c3"=c("X","X"),
                                   "c4"=c("X","X"),
                                   "c5"=c("X","X")),
-              note="Note: The dependent variable is log home sale price. An observation is a property
-transaction. Solar is the dummy variable indicating solar at the time of sale. Tercile
-interactions show the heterogeneous estimate for the column heading. Columns (2)-
-(5) adjust the sale price by the expected difference in roof value for homes with solar
-(see \\ref{ap:roof}). Standard errors clustered by ZIP-year. Appraised condition is a
-categorical variable ranging from “poor” to “excellent” determined by the bank loan
-appraiser. Properties with missing appraised condition data are considered to be in
-their own category.")
+              note="Note: The dependent variable is log home sale price. An 
+              observation is a property transaction. Solar is the dummy variable 
+              indicating solar at the time of sale. Tercile interactions show the 
+              heterogeneous interactions for the column heading. Columns (2)-(5) use 
+              permit and MLS controls. Standard errors clustered by ZIP-year. 
+              Appraised condition is a categorical variable ranging from “poor” 
+              to “excellent” determined by the bank loan appraiser. Properties 
+              with missing appraised condition data are considered to be in their 
+              own category. In column (4), the first and third terciles are 
+              statistically different at the 5\\% level for non-TPO and TPO.")
 
 rm(lmRep1,lmRep2,lmRep3,lmRep4,lmRep5)
 
 
-
-
 # Solar present value regressions ----------------------------------------------
 
-lmPV1 <- feols(SALE_AMOUNT ~ hasSolar:factor(TPO):pv15 |
+lmPV1 <- feols(SALE_AMOUNT ~ hasSolar:pv15 + hasSolar:pv15:TPO |
                 ZipYr + ID + FIPSMonth,
                dat)
 
-lmPV2 <- feols(SALE_AMOUNT ~  hasSolar:factor(TPO):pv15 + 
+lmPV2 <- feols(SALE_AMOUNT ~  hasSolar:pv15 + hasSolar:pv15:TPO + 
                   CONDITION + permitPresentVal + storage + 
                  missingRoofVal + missingBathroomVal+ 
                                          missingRemodelVal+
@@ -328,50 +305,40 @@ lmPV2 <- feols(SALE_AMOUNT ~  hasSolar:factor(TPO):pv15 +
                  ZipYr + ID + FIPSMonth,
                dat)
 
-lmPV3 <- feols(SALE_AMOUNT ~ 
-                 hasSolar:factor(TPO):pv15:factor(demshare_tercile) + 
+lmPV3 <- feols(SALE_AMOUNT ~ hasSolar:pv15 + hasSolar:pv15:TPO + 
+                 hasSolar:pv15:factor(demshare_tercile) + 
+                 hasSolar:pv15:TPO:factor(demshare_tercile)  + 
                  CONDITION + permitPresentVal +
                  missingRoofVal + missingBathroomVal+ missingRemodelVal+
                  missingKitchenVal + storage + otherMissing|
                  ZipYr + ID + FIPSMonth,
                dat)
 
-linearHypothesis(lmPV3, "hasSolar:factor(TPO)0:pv15:factor(demshare_tercile)3 - 
-                 hasSolar:factor(TPO)0:pv15:factor(demshare_tercile)2 = 0") 
-linearHypothesis(lmPV3, "hasSolar:factor(TPO)0:pv15:factor(demshare_tercile)1 - 
-                 hasSolar:factor(TPO)0:pv15:factor(demshare_tercile)3 = 0") 
-
-lmPV4 <- feols(SALE_AMOUNT ~ 
-                 pv15:factor(TPO):hasSolar:factor(inc_tercile) + 
+lmPV4 <- feols(SALE_AMOUNT ~ hasSolar:pv15 + hasSolar:pv15:TPO + 
+                 hasSolar:pv15:factor(inc_tercile) + 
+                 hasSolar:pv15:TPO:factor(inc_tercile)  +
                  CONDITION + permitPresentVal +
                  missingRoofVal + missingBathroomVal+ missingRemodelVal+
                  missingKitchenVal + storage + otherMissing|
                  ZipYr + ID + FIPSMonth,
-               dat[(missing==0 & year>2009) | year<2010])
+               dat)
 
-linearHypothesis(lmPV4, "pv15:factor(TPO)0:hasSolar:factor(inc_tercile)3 - 
-                 pv15:factor(TPO)0:hasSolar:factor(inc_tercile)2 = 0")
-linearHypothesis(lmPV4, "pv15:factor(TPO)0:hasSolar:factor(inc_tercile)3 - 
-                 pv15:factor(TPO)0:hasSolar:factor(inc_tercile)1 = 0")
-
-lmPV5 <- feols(SALE_AMOUNT ~ 
-                 pv15:factor(TPO):hasSolar:factor(BA_tercile) + 
+lmPV5 <- feols(SALE_AMOUNT ~ hasSolar:pv15 + hasSolar:pv15:TPO + 
+                 hasSolar:pv15:factor(BA_tercile) + 
+                 hasSolar:pv15:TPO:factor(BA_tercile)  + 
                  CONDITION + permitPresentVal +
                  missingRoofVal + missingBathroomVal+ missingRemodelVal+
                  missingKitchenVal + storage + otherMissing|
                  ZipYr + ID + FIPSMonth,
-               dat[(missing==0 & year>2009) | year<2010])
-
-linearHypothesis(lmPV5, "pv15:factor(TPO)0:hasSolar:factor(BA_tercile)3 - 
-                 pv15:factor(TPO)0:hasSolar:factor(BA_tercile)2 = 0")
-linearHypothesis(lmPV5, "pv15:factor(TPO)0:hasSolar:factor(BA_tercile)3 - 
-                 pv15:factor(TPO)0:hasSolar:factor(BA_tercile)1 = 0") 
+               dat)
 
 ## Table ----
+
 save( lmPV1, lmPV2, lmPV3, lmPV4, lmPV5, file="lmPV.RData")
+# load(file="lmPV.RData")
 
 modelsummary( list("baseline"=lmPV1,
-                   "permit controls"=lmPV2,
+                   "prop. improvement controls"=lmPV2,
                    "income"=lmPV4,
                    "Dem. share"=lmPV3,
                    "college"=lmPV5),
@@ -380,27 +347,20 @@ modelsummary( list("baseline"=lmPV1,
               stars=T,
               escape = F,
               fmt = fmt_decimal(2, 2),
-              coef_map=c("hasSolar:factor(TPO)0:pv15"="solar NPV",
-                         "hasSolar:factor(TPO)1:pv15"="TPO solar NPV",
-                         "hasSolar"="solar intercept",
-                         "pv15:factor(TPO)0:hasSolar:factor(inc_tercile)1"="solar NPV $\\times$ tercile 1",
-                         "pv15:factor(TPO)0:hasSolar:factor(inc_tercile)2"="solar NPV $\\times$ tercile 2",
-                         "pv15:factor(TPO)0:hasSolar:factor(inc_tercile)3"="solar NPV $\\times$ tercile 3",
-                         "hasSolar:factor(TPO)0:pv15:factor(demshare_tercile)1"="solar NPV $\\times$ tercile 1",
-                         "hasSolar:factor(TPO)0:pv15:factor(demshare_tercile)2"="solar NPV $\\times$ tercile 2",
-                         "hasSolar:factor(TPO)0:pv15:factor(demshare_tercile)3"="solar NPV $\\times$ tercile 3",
-                         "pv15:factor(TPO)0:hasSolar:factor(BA_tercile)1"="solar NPV $\\times$ tercile 1",
-                         "pv15:factor(TPO)0:hasSolar:factor(BA_tercile)2"="solar NPV $\\times$ tercile 2",
-                         "pv15:factor(TPO)0:hasSolar:factor(BA_tercile)3"="solar NPV $\\times$ tercile 3",
-                         "pv15:factor(TPO)1:hasSolar:factor(inc_tercile)1"="PV TPO solar $\\times$ tercile 1",
-                         "pv15:factor(TPO)1:hasSolar:factor(inc_tercile)2"="PV TPO solar $\\times$ tercile 2",
-                         "pv15:factor(TPO)1:hasSolar:factor(inc_tercile)3"="PV TPO solar $\\times$ tercile 3",
-                         "hasSolar:factor(TPO)1:pv15:factor(demshare_tercile)1"="PV TPO solar $\\times$ tercile 1",
-                         "hasSolar:factor(TPO)1:pv15:factor(demshare_tercile)2"="PV TPO solar $\\times$ tercile 2",
-                         "hasSolar:factor(TPO)1:pv15:factor(demshare_tercile)3"="PV TPO solar $\\times$ tercile 3",
-                         "pv15:factor(TPO)1:hasSolar:factor(BA_tercile)1"="PV TPO solar $\\times$ tercile 1",
-                         "pv15:factor(TPO)1:hasSolar:factor(BA_tercile)2"="PV TPO solar $\\times$ tercile 2",
-                         "pv15:factor(TPO)1:hasSolar:factor(BA_tercile)3"="PV TPO solar $\\times$ tercile 3"
+              coef_map=c("hasSolar:pv15"="PVBenefits",
+                         "hasSolar:pv15:TPO"="TPO $\\times$ PVBenefits",
+                         "hasSolar:pv15:factor(inc_tercile)2"="PVBenefits $\\times$ tercile 2",
+                         "hasSolar:pv15:factor(inc_tercile)3"="PVBenefits $\\times$ tercile 3",
+                         "hasSolar:pv15:factor(demshare_tercile)2"="PVBenefits $\\times$ tercile 2",
+                         "hasSolar:pv15:factor(demshare_tercile)3"="PVBenefits $\\times$ tercile 3",
+                         "hasSolar:pv15:factor(BA_tercile)2"="PVBenefits $\\times$ tercile 2",
+                         "hasSolar:pv15:factor(BA_tercile)3"="PVBenefits $\\times$ tercile 3",
+                         "hasSolar:pv15:TPO:factor(inc_tercile)2"="TPO $\\times$ PVBenefits $\\times$ tercile 2",
+                         "hasSolar:pv15:TPO:factor(inc_tercile)3"="TPO $\\times$ PVBenefits $\\times$ tercile 3",
+                         "hasSolar:pv15:TPO:factor(demshare_tercile)2"="TPO $\\times$ PVBenefits $\\times$ tercile 2",
+                         "hasSolar:pv15:TPO:factor(demshare_tercile)3"="TPO $\\times$ PVBenefits $\\times$ tercile 3",
+                         "hasSolar:pv15:TPO:factor(BA_tercile)2"="TPO $\\times$ PVBenefits $\\times$ tercile 2",
+                         "hasSolar:pv15:TPO:factor(BA_tercile)3"="TPO $\\times$ PVBenefits $\\times$ tercile 3"
               ),
               gof_map=tibble::tribble(
                 ~raw,        ~clean,          ~fmt,
@@ -409,7 +369,7 @@ modelsummary( list("baseline"=lmPV1,
                 "FE: ZipYr","zip $\\times$ year FE",NA,
                 "FE: ID","house FE",NA,
                 "FE: FIPSMonth","county $\\times$ month FE",NA),
-              add_rows=data.frame("name"=c("appraised condition","permit controls"),
+              add_rows=data.frame("name"=c("condition","permit vars"),
                                   "c1"=c("",""),
                                   "c2"=c("X","X"),
                                   "c3"=c("X","X"),
@@ -423,12 +383,9 @@ by the expected difference in roof value for homes with solar (see \\ref{ap:roof
 In (5), the coefficient on the third tercile is statistically different than
 the first tercile at the 5\\% level. Standard errors clustered by ZIP-year. Appraised con-
 dition is a categorical variable ranging from “poor” to “excellent” determined by the
-bank loan appraiser. Properties with missing appraised condition data are considered
-to be in their own category. Property permit controls include discounted present
+bank loan appraiser. Property permit controls include discounted present
 value of reported permited job values and dummy variables for categories of missing
-permit values. Zip code-year combinations with low total permit counts are omitted.");beep(1)
-
-rm(lmPV3,lmPV4,lmPV5)
+permit values.");beep(1)
 
 # alt discount rates -----------------------------------------------------------------
 
@@ -558,48 +515,140 @@ rm(lmPV1_2,lmPV1_5,lmPV1,lmPV1_10,
      lmPV2_2,lmPV2_5,lmPV2,lmPV2_10,
      lmPV2_5_flat,lmPV2_10_flat,lmPV2_15_flat)
 
-# Replace cost regressions ----------------------------------------------------------------------
-fread("")
+# Solar present value w/o TPO ----------------------------------------------
+
+lmPV1_NoTPO <- feols(SALE_AMOUNT ~ hasSolar:pv15|
+                 ZipYr + ID + FIPSMonth,
+               dat)
+
+lmPV2_NoTPO <- feols(SALE_AMOUNT ~  hasSolar:pv15 + 
+                 CONDITION + permitPresentVal + storage + 
+                 missingRoofVal + missingBathroomVal+ 
+                 missingRemodelVal+
+                 missingKitchenVal + otherMissing|
+                 ZipYr + ID + FIPSMonth,
+               dat)
+
+lmPV3_NoTPO <- feols(SALE_AMOUNT ~ hasSolar:pv15 + 
+                 hasSolar:pv15:factor(demshare_tercile) + 
+                 CONDITION + permitPresentVal +
+                 missingRoofVal + missingBathroomVal+ missingRemodelVal+
+                 missingKitchenVal + storage + otherMissing|
+                 ZipYr + ID + FIPSMonth,
+               dat)
+
+lmPV4_NoTPO <- feols(SALE_AMOUNT ~ hasSolar:pv15 + 
+                 hasSolar:pv15:factor(inc_tercile) + 
+                 CONDITION + permitPresentVal +
+                 missingRoofVal + missingBathroomVal+ missingRemodelVal+
+                 missingKitchenVal + storage + otherMissing|
+                 ZipYr + ID + FIPSMonth,
+               dat)
+
+lmPV5_NoTPO <- feols(SALE_AMOUNT ~ hasSolar:pv15 + 
+                 hasSolar:pv15:factor(BA_tercile) + 
+                 hasSolar:pv15:TPO:factor(BA_tercile)  + 
+                 CONDITION + permitPresentVal +
+                 missingRoofVal + missingBathroomVal+ missingRemodelVal+
+                 missingKitchenVal + storage + otherMissing|
+                 ZipYr + ID + FIPSMonth,
+               dat)
+
+## Table ----
+
+save( lmPV1, lmPV2, lmPV3, lmPV4, lmPV5, file="lmPV.RData")
+# load(file="lmPV.RData")
+
+modelsummary( list("baseline"=lmPV1,
+                   "prop. improvement controls"=lmPV2,
+                   "income"=lmPV4,
+                   "Dem. share"=lmPV3,
+                   "college"=lmPV5),
+              output="../5_analysis/tab_PV.tex",
+              title="Solar present value linear regressions \\label{tab:pv}",
+              stars=T,
+              escape = F,
+              fmt = fmt_decimal(2, 2),
+              coef_map=c("hasSolar:pv15"="PVBenefits",
+                         "hasSolar:pv15:TPO"="TPO $\\times$ PVBenefits",
+                         "hasSolar:pv15:factor(inc_tercile)2"="PVBenefits $\\times$ tercile 2",
+                         "hasSolar:pv15:factor(inc_tercile)3"="PVBenefits $\\times$ tercile 3",
+                         "hasSolar:pv15:factor(demshare_tercile)2"="PVBenefits $\\times$ tercile 2",
+                         "hasSolar:pv15:factor(demshare_tercile)3"="PVBenefits $\\times$ tercile 3",
+                         "hasSolar:pv15:factor(BA_tercile)2"="PVBenefits $\\times$ tercile 2",
+                         "hasSolar:pv15:factor(BA_tercile)3"="PVBenefits $\\times$ tercile 3",
+                         "hasSolar:pv15:TPO:factor(inc_tercile)2"="TPO $\\times$ PVBenefits $\\times$ tercile 2",
+                         "hasSolar:pv15:TPO:factor(inc_tercile)3"="TPO $\\times$ PVBenefits $\\times$ tercile 3",
+                         "hasSolar:pv15:TPO:factor(demshare_tercile)2"="TPO $\\times$ PVBenefits $\\times$ tercile 2",
+                         "hasSolar:pv15:TPO:factor(demshare_tercile)3"="TPO $\\times$ PVBenefits $\\times$ tercile 3",
+                         "hasSolar:pv15:TPO:factor(BA_tercile)2"="TPO $\\times$ PVBenefits $\\times$ tercile 2",
+                         "hasSolar:pv15:TPO:factor(BA_tercile)3"="TPO $\\times$ PVBenefits $\\times$ tercile 3"
+              ),
+              gof_map=tibble::tribble(
+                ~raw,        ~clean,          ~fmt,
+                "nobs",      "N",             0,
+                "r.squared", "R$^2$", 2,
+                "FE: ZipYr","zip $\\times$ year FE",NA,
+                "FE: ID","house FE",NA,
+                "FE: FIPSMonth","county $\\times$ month FE",NA),
+              add_rows=data.frame("name"=c("condition","permit vars"),
+                                  "c1"=c("",""),
+                                  "c2"=c("X","X"),
+                                  "c3"=c("X","X"),
+                                  "c4"=c("X","X"),
+                                  "c5"=c("X","X")),
+              notes = "Note: The dependent variable is home sale price. An observation is a property trans-
+action. PVBenefits is the net present value of the remaining future benefits of solar at
+the time of transaction. We assume a 10\\% discount rate. Tercile interactions show the
+heterogeneous estimate for the column heading. Columns (2)-(5) adjust the sale price
+by the expected difference in roof value for homes with solar (see \\ref{ap:roof}).
+In (5), the coefficient on the third tercile is statistically different than
+the first tercile at the 5\\% level. Standard errors clustered by ZIP-year. Appraised con-
+dition is a categorical variable ranging from “poor” to “excellent” determined by the
+bank loan appraiser. Property permit controls include discounted present
+value of reported permited job values and dummy variables for categories of missing
+permit values.");beep(1)
+
+
+# Replace cost regressions -----------------------------------------------------
+  
 lmC1 <- feols(SALE_AMOUNT ~ replaceCost:hasSolar |
                ZipYr + ID + FIPSMonth,
              dat)
 
 lmC2 <- feols(SALE_AMOUNT ~ replaceCost:hasSolar |
-               ZipYr + ID + FIPSMonth+ CONDITION,
+               ZipYr + ID + FIPSMonth+ CONDITION + permitPresentVal +
+                missingRoofVal + missingBathroomVal+ missingRemodelVal+
+                missingKitchenVal,
              dat)
 
-lmC3 <- feols(SALE_AMOUNT ~ 
+lmC3 <- feols(SALE_AMOUNT ~ replaceCost:hasSolar +
                replaceCost:hasSolar:factor(demshare_tercile)|
-               ZipYr + ID + FIPSMonth+ CONDITION,
+               ZipYr + ID + FIPSMonth+ CONDITION + permitPresentVal +
+                missingRoofVal + missingBathroomVal+ missingRemodelVal+
+                missingKitchenVal,
              dat)
-linearHypothesis(lmC3, "replaceCost:hasSolar:factor(demshare_tercile)3 - 
-                 replaceCost:hasSolar:factor(demshare_tercile)2 = 0")
-linearHypothesis(lmC3, "replaceCost:hasSolar:factor(demshare_tercile)3 - 
-                 replaceCost:hasSolar:factor(demshare_tercile)1 = 0") 
-#different at .05
 
 
-lmC4 <- feols(SALE_AMOUNT ~ 
+
+lmC4 <- feols(SALE_AMOUNT ~ replaceCost:hasSolar +
                replaceCost:hasSolar:factor(inc_tercile)|
-               ZipYr + ID + FIPSMonth + CONDITION,
+               ZipYr + ID + FIPSMonth + CONDITION + permitPresentVal +
+                missingRoofVal + missingBathroomVal+ missingRemodelVal+
+                missingKitchenVal,
              dat)
-linearHypothesis(lmC4, "replaceCost:hasSolar:factor(inc_tercile)3 - 
-                 replaceCost:hasSolar:factor(inc_tercile)2 = 0") # different at .1
-linearHypothesis(lmC4, "replaceCost:hasSolar:factor(inc_tercile)3 - 
-                 replaceCost:hasSolar:factor(inc_tercile)1 = 0") 
 
-lmC5 <- feols(SALE_AMOUNT ~ 
+
+lmC5 <- feols(SALE_AMOUNT ~ replaceCost:hasSolar+
                 replaceCost:hasSolar:factor(BA_tercile)|
-                ZipYr + ID + FIPSMonth+ CONDITION,
+                ZipYr + ID + FIPSMonth+ CONDITION + permitPresentVal +
+                missingRoofVal + missingBathroomVal+ missingRemodelVal+
+                missingKitchenVal,
               dat)
-linearHypothesis(lmC5, "replaceCost:hasSolar:factor(BA_tercile)3 - 
-                 replaceCost:hasSolar:factor(BA_tercile)2 = 0") # different at 10 percent level
-linearHypothesis(lmC5, "replaceCost:hasSolar:factor(BA_tercile)3 - 
-                 replaceCost:hasSolar:factor(BA_tercile)1 = 0") #different at .01 level
 
 ## Table ----
 modelsummary( list("baseline"=lmC1,
-                   "baseline +"=lmC2,
+                   "property improvements"=lmC2,
                    "income"=lmC4,
                    "D share"=lmC3,
                    "college"=lmC5),
@@ -647,6 +696,7 @@ Standard errors are clustered by ZIP-year.")
 
 
 # Robustness checks ------------------------------------------------------------
+
 repSale <- duplicated(dat$ID) %>% which %>% dat$ID[.] %>% unique
 dat2 <- fread("../3_output_data/alt_model_data.csv")
 dat2$repSale <- 0
@@ -657,34 +707,35 @@ dat$repSale <- 0
 dat$repSale[dat$ID %in% repSale] <- 1
 dat$repSale %>% sum
 
-lmR1 <- feols(SALE_AMOUNT ~ hasSolar:factor(TPO):pv15 + 
+lmR1 <- feols(SALE_AMOUNT ~ hasSolar:pv15 + hasSolar:pv15:TPO + 
                 LIVING_SQUARE_FEET|
-                ZipYr + FIPSMonth+ ZipYr,
+                ZipYr + FIPSMonth+ FIPSMonth,
               dat)
+
+lmR2 <- feols(SALE_AMOUNT ~ hasSolar:pv15 + hasSolar:pv15:TPO + 
+                LIVING_SQUARE_FEET|
+                ZipYr + FIPSMonth + FIPSMonth,
+              dat2)
 
 dat$monthYr <- paste(dat$month,dat$year)
 
-lmR3 <- feols(SALE_AMOUNT ~ hasSolar:factor(TPO):pv15 + CONDITION + permitPresentVal +
+lmR3 <- feols(SALE_AMOUNT ~ hasSolar:pv15 + hasSolar:pv15:TPO + 
+                CONDITION + permitPresentVal +
                 missingRoofVal + missingBathroomVal+ missingRemodelVal+
                 missingKitchenVal + storage + otherMissing|
                  ZipYr + ID + monthYr,
-               dat[year>2009]) #different fixed effects
+               dat) #different fixed effects
 
-
-lmR2 <- feols(SALE_AMOUNT ~ hasSolar:factor(TPO):pv15 + 
-                LIVING_SQUARE_FEET|
-                ZipYr + FIPSMonth + ZipYr,
-              dat2)
-
-lmR4 <- feols(SALE_AMOUNT ~ hasSolar:factor(TPO):pv15:I((year>2014)) + 
+lmR4 <- feols(SALE_AMOUNT ~ hasSolar:pv15 + hasSolar:pv15:TPO + 
+                hasSolar:pv15:I((year>2014)) + hasSolar:pv15:TPO:I((year>2014)) +
                 CONDITION + permitPresentVal +
                 missingRoofVal + missingBathroomVal+ missingRemodelVal+
                 missingKitchenVal + storage + otherMissing|
                 ZipYr + ID + FIPSMonth,
               dat)
 
-lmR5 <- feols(SALE_AMOUNT ~ hasSolar:factor(TPO):pv15 + 
-                hasSolar:factor(TPO):pv15:I(year-2010) + 
+lmR5 <- feols(SALE_AMOUNT ~ hasSolar:pv15 + hasSolar:pv15:TPO + 
+                hasSolar:pv15:I(year-2010) + hasSolar:pv15:TPO:I(year-2010) +
                 CONDITION + permitPresentVal +
                 missingRoofVal + missingBathroomVal+ missingRemodelVal+
                 missingKitchenVal + storage + otherMissing|
@@ -705,14 +756,12 @@ modelsummary( list("no home fe full sample"=lmR1,
               booktabs =T,
               title="Robustness checks \\label{tab:robust}",
               fmt = fmt_decimal(2, 2),
-              coef_map=c("hasSolar:factor(TPO)0:pv15"="solar NPV",
-                         "hasSolar:factor(TPO)1:pv15"="TPO solar NPV",
-                         "hasSolar:factor(TPO)0:pv15:I((year > 2014))TRUE"="solar NPV (≥ 2015)",
-                         "hasSolar:factor(TPO)0:pv15:I((year > 2014))FALSE"="solar NPV (< 2015)",
-                         "hasSolar:factor(TPO)1:pv15:I((year > 2014))TRUE"="TPO solar NPV (≥ 2015)",
-                         "hasSolar:factor(TPO)1:pv15:I((year > 2014))FALSE"="TPO solar NPV (< 2015)",
-                         "hasSolar:factor(TPO)0:pv15:I(year - 2010)"="solar NPV $\\times$ t",
-                         "hasSolar:factor(TPO)1:pv15:I(year - 2010)"="TPO solar NPV $\\times$ t"
+              coef_map=c("hasSolar:pv15"="PVBenefits",
+                         "hasSolar:pv15:TPO"="TPO $\\times$ PVBenefits",
+                         "hasSolar:pv15:I((year > 2014))TRUE"="PVBenefits $\\times$ $\\geq$ 2015",
+                         "hasSolar:pv15:TPO:I((year > 2014))TRUE"="TPO $\\times$ PVBenefits $\\times$ $\\geq$ 2015",
+                         "hasSolar:pv15:I(year - 2010)"="PVBenefits $\\times$ t",
+                         "hasSolar:pv15:TPO:I(year - 2010)"="TPO $\\times$ PVBenefits $\\times$ t"
               ),
               gof_map=tibble::tribble(
                 ~raw,        ~clean,          ~fmt,
@@ -725,7 +774,7 @@ modelsummary( list("no home fe full sample"=lmR1,
 
               notes = list(c("\tabnote[.9\\textwidth]{Note: The dependent variable 
                              for all models is the property transaction
-              price in levels. Columns (1)-(2) test if there is substantial slection
+              price in levels. Columns (1)-(2) test if there is slection
               bias arising from the repeat sales sample. Column (1) includes all
               sales after 2009 and no property fixed effects. Column (2) adds 
               renovation controls. Column (3) restricts the sample to property 
@@ -734,7 +783,6 @@ modelsummary( list("no home fe full sample"=lmR1,
               for repeat sales---replacing county $\\times$ month fixed effects with month $\\times$ year
               fixed effects. Column (5) removes homes with solar sold before 2011.
               Model (6) includes a time trend interaction.}")))
-
 
 
 # Fin --------------------------------------------------------------------------

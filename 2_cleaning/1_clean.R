@@ -71,7 +71,6 @@ ma$street <- paste(ma$SITUS_HOUSE_NUMBER_PREFIX,
 
 ## Combine
 ct$APN__Parcel_Number___unformatted <- ct$APN__Parcel_Number___unformatted %>%as.numeric
-# ma$APN__Parcel_Number___unformatted <- NULL
 both <- rbind(ct,ma)
 rm(ma,ct)
 gc()

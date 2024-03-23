@@ -159,8 +159,6 @@ permit$heatpump  <- (grepl("heatpump|heat pump|heat-pump|mini split|mini-split|m
 permit$geothermal  <- (grepl("geothermal|geo-thermal|geo thermal",permit$`PERMIT DESCRIPTION`,
                            ignore.case=T))*1
 
-
-  
 # Make long year-property-value and project data  ------------------------------
 
 discount <- 0.1
@@ -233,8 +231,6 @@ sumdPermits[is.na(newRoof),"newRoof"] <- 0
 sumdPermits[is.na(remodel),"remodel"] <- 0
 sumdPermits[is.na(newKitchen),"newKitchen"] <- 0
 sumdPermits[is.na(newBathroom),"newBathroom"] <- 0
-
-
 
 # Save ------------------------------------------------------------------------
 

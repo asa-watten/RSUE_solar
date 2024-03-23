@@ -494,7 +494,7 @@ ggplot(counts_TPO_install_year)+
 ggsave("../5_analysis/fig_fracTPO_install_year.pdf",width = 5, height=5, 
        units="in")
 
-##by income tercile ----
+##By income tercile ----
 ggplot(counts_inc)+geom_line(aes(x=year,y=N,linetype=as.factor(inc_tercile))) +
   xlim(2000,2020) +
   xlab("year") +
@@ -539,7 +539,7 @@ ggplot(temp)+geom_line(aes(x=year,y=cumfrac,linetype=as.factor(inc_tercile))) +
 ggsave("../5_analysis/fig_cumfrac_solar_inc.pdf",width = 5, height=5, 
        units="in")
 
-##by dem share ----
+##By dem share ----
 
 temp <- merge(solar,zip_pol[survey_period=="2012-2016"],
               by.x=c("hostcustomerzip__4_"),

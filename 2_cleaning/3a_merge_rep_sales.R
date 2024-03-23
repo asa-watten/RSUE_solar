@@ -46,6 +46,7 @@ tax <- rbind(tax,tax2)
 rm(tax2)
 
 # Merge ------------------------------------------------------------------------
+
 ## TAX -------------------------------
 tax <- tax[order(TAX_YEAR,decreasing = T)]
 tax <- tax[!duplicated(tax[,c("FIPS_CODE","APN_SEQUENCE_NBR","P_ID_IRIS_FRMTD")])]
@@ -280,7 +281,7 @@ dat$month <- dat$SALE_DATE%>%substr(.,5,6)
 # save -------------------------
 fwrite(dat,"../3_output_data/merged_data.csv");beep(3)
 
-# Merge solar and mls ------------------------
+# Merge solar and mls ----------------------------------------------------------
 
 solar <- fread("../3_output_data/solar.csv")
 

@@ -26,6 +26,7 @@ setwd(dirname(current_path ))
 print( getwd() )
 
 # Loop over two input files ----------------------------------------------------
+
 files <- c("../3_output_data/merged_data.csv",
            "../3_output_data/merged_2010_2019_data.csv")
 
@@ -329,16 +330,19 @@ for(f in files){
   dat[is.na(replaceCost),"replaceCost"] <- 0
   
   # Battery --------------------------------------------------------------------
+  
   dat$batteryStoragefromPermit <- (dat$batteryStoragefromPermit>0)*1
   dat[is.na(batteryStoragefromPermit),"batteryStoragefromPermit"] <- 0
   dat[storage==0,"storage"] <- dat[storage==0,"batteryStoragefromPermit"]
   
   # Permit vars ----------------------------------------------------------------
+  
   dat$otherMissing <- ((dat$NpermitMissing -dat$missingRemodelVal - 
                           dat$missingKitchenVal - dat$missingBathroomVal - 
                           dat$missingRoofVal)>0)*1
   
   # Save repeat sales data -----------------------------------------------------
+  
   if(f=="../3_output_data/merged_data.csv"){
     fwrite(dat,"../3_output_data/main_model_data.csv")
   }else{
